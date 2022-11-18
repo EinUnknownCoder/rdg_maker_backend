@@ -119,7 +119,7 @@ def read_item(dancer_ids):
     print("Exporting...")
     export.export("export/" + export_file_name , format="mp3")
 
-    os.system('cmd /k "echo Hello world!"')
+    os.system('cmd /c "echo Hello world!"')
 
     return song_list
 
