@@ -41,7 +41,7 @@ def read_item(dancer_ids):
     res = cur.execute(f"""
     SELECT 
     song.URL, song.Title, song.Artist,
-    sequence.Start, sequence.End, sequence.Desription
+    sequence.Start, sequence.End, sequence.Description
     FROM sequence
     INNER JOIN song ON sequence.SongID=song.SongID
     INNER JOIN mastery ON sequence.SequenceID=mastery.SequenceID
@@ -118,6 +118,8 @@ def read_item(dancer_ids):
 
     print("Exporting...")
     export.export("export/" + export_file_name , format="mp3")
+
+    os.system('cmd /k "echo Hello world!"')
 
     return song_list
 
