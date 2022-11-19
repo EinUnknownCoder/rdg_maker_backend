@@ -7,6 +7,7 @@ import random
 import math
 from pydub import AudioSegment
 from datetime import datetime
+import time
 
 app = FastAPI()
 
@@ -101,17 +102,26 @@ def read_item(dancer_ids):
         else:
             print(f"{file_name} is already downloaded and is skipped.")
 
-    timestamps = []
-
+    chapters = []
+    song_counter = 0
     export = AudioSegment.empty()
 
     print("Creating Export...")
     for song in song_list:
 
+        # Chapters
+        song_counter += 1
+        timestamp = time.strftime('%H:%M:%S', time.gmtime(int(export.duration_seconds)))
+        chapters.append([
+            timestamp, 
+            song_counter, 
+            " - ".join([song["Artist"], song["Title"]]),
+            f"({song['Description']})"
+            ])
+
+        # Audio
         file_name = song["Artist"] + " - " + song["Title"] + ".mp4"
-
         song_snippet = AudioSegment.from_file("raw/" + file_name)[(song["Start"] - 10) * 1000:(song["End"] + 2) * 1000].fade_in(2000).fade_out(2000)
-
         export += song_snippet
 
     export_file_name = "".join([str(datetime.now().strftime("%Y-%m-%d_%H_%M_%S"))]) + ".mp3"
@@ -119,9 +129,16 @@ def read_item(dancer_ids):
     print("Exporting...")
     export.export("export/" + export_file_name , format="mp3")
 
-    os.system('cmd /c "echo Hello world!"')
+    chapter_summary_comment = ""
+    chapter_summary_YouTube = ""
 
-    return song_list
+    for chapter in chapters:
+        chapter_summary_comment += f"{chapter[0]} {chapter[1]} {chapter[2]} {chapter[3]}newLine"
+        chapter_summary_YouTube += f"{chapter[0]} {chapter[1]} {chapter[2]} {chapter[3]}\n"
+
+    os.system(f"""ffmpeg.exe -loop 1 -framerate 1 -i export/image.jpg -i export/{export_file_name} -map 0:v -map 1:a -r 10 -vf \"scale='iw-mod(iw,2)\':\'ih-mod(ih,2)\',format=yuv420p\" -movflags +faststart -shortest -fflags +shortest -max_interleave_delta 100M -metadata comment=\"{chapter_summary_comment}\" export/{export_file_name}.mp4""")
+
+    return {"Data": chapter_summary_YouTube}
 
 @app.get("/showPreview/{dancer_ids}")
 def read_item(dancer_ids):
