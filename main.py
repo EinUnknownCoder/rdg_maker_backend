@@ -100,7 +100,7 @@ def read_item(dancer_ids):
             audio_stream = yt.streams.get_audio_only()
             audio_stream.download("raw/", file_name)
         else:
-            print(f"{file_name} is already downloaded and is skipped.")
+            print(f"{file_name} is already downloaded.")
 
     chapters = []
     song_counter = 0
@@ -178,6 +178,95 @@ def read_item(dancer_ids):
         )
     return answer
 
+@app.get("/mastery")
+def read_root():
+    con = sqlite3.connect("songlist.db")
+    cur = con.cursor()
+    res = cur.execute("""
+    SELECT 
+    mastery.*,
+    sequence.Description,
+    song.Artist, song.Title,
+    dancer.Name
+    FROM mastery
+    INNER JOIN sequence ON sequence.SequenceID=mastery.SequenceID
+    INNER JOIN song ON sequence.SongID=song.SongID
+    INNER JOIN dancer ON dancer.DancerID=mastery.DancerID
+    """)
+    data = res.fetchall()
+    con.close()
+
+    answer = []
+    for entry in data:
+        answer.append(
+            {
+                "ID": entry[0],
+                "SequenceID": entry[1],
+                "DancerID": entry[2],
+                "Description": entry[3],
+                "Artist": entry[4],
+                "Title": entry[5],
+                "Name": entry[6],
+            }
+        )
+    return answer
+
+@app.get("/sequence")
+def read_root():
+    con = sqlite3.connect("songlist.db")
+    cur = con.cursor()
+    res = cur.execute("""
+    SELECT 
+    sequence.*,
+    song.Artist, song.Title
+    FROM sequence
+    INNER JOIN song ON sequence.SongID=song.SongID
+    """)
+    data = res.fetchall()
+    con.close()
+
+    answer = []
+    for entry in data:
+        answer.append(
+            {
+                "ID": entry[0],
+                "SongID": entry[1],
+                "Start": entry[2],
+                "End": entry[3],
+                "Description": entry[4],
+                "Comment": entry[5],
+                "LastTimeInRDG": entry[6],
+                "Artist": entry[7],
+                "Title": entry[8],
+            }
+        )
+    return answer
+
+@app.get("/song")
+def read_root():
+    con = sqlite3.connect("songlist.db")
+    cur = con.cursor()
+    res = cur.execute("""
+    SELECT 
+    *
+    FROM song
+    """)
+    data = res.fetchall()
+    con.close()
+
+    answer = []
+    for entry in data:
+        answer.append(
+            {
+                "ID": entry[0],
+                "URL": entry[1],
+                "Artist": entry[2],
+                "Title": entry[3],
+                "Comment": entry[4],
+            }
+        )
+    return answer
+
 @app.get("/dancer")
 def read_root():
     con = sqlite3.connect("songlist.db")
@@ -233,7 +322,3 @@ def read_root():
             }
         )
     return answer
-
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: str | None = None):
-    return {"item_id": item_id, "q": q}
