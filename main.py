@@ -4,10 +4,13 @@ import sqlite3
 import os
 from pytube import YouTube
 import random
-import math
 from pydub import AudioSegment
 from datetime import datetime
 import time
+from pydantic import BaseModel
+
+class Dancer(BaseModel):
+    name: str
 
 app = FastAPI()
 
@@ -28,6 +31,32 @@ app.add_middleware(
 @app.get("/")
 def read_root():
     return {"Data": "Hello World"}
+
+@app.post("/dancer/")
+def create_item(dancer: Dancer):
+    con = sqlite3.connect("songlist.db")
+    cur = con.cursor()
+
+    # res = cur.execute(f"""
+    # INSERT INTO
+    # DancerNew (Name)
+    # VALUES ('{dancer.name}')
+    # """)
+
+    # res = cur.execute(f"""
+    # CREATE TABLE DancerNew (
+    #     DancerID INTEGER PRIMARY KEY,
+    #     Name TEXT NOT NULL
+    # )
+    # """)
+
+    # res = cur.execute(f"""
+    # DROP TABLE DancerNew
+    # """)
+
+    data = res.fetchall()
+    con.close()
+    return dancer
 
 @app.get("/createPlaylist/{dancer_ids}")
 def read_item(dancer_ids):
