@@ -1,6 +1,8 @@
 ffmpeg.exe
 ffplay.exe
 ffprobe.exe
+songlist.xlsx
+~$songlist.xlsx
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

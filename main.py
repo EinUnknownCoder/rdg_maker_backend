@@ -8,6 +8,7 @@ from pydub import AudioSegment
 from datetime import datetime
 import time
 from pydantic import BaseModel
+from openpyxl import load_workbook
 
 class Dancer(BaseModel):
     name: str
@@ -31,6 +32,25 @@ app.add_middleware(
 @app.get("/")
 def read_root():
     return {"Data": "Hello World"}
+
+@app.get("/showExcel")
+def read_root():
+    wb = load_workbook(filename="songlist.xlsx", read_only=True, data_only=True)
+    sheet = wb["Songlist"]
+
+    answer = []
+
+    for x in range(2, sheet.max_row + 1):
+        answer.append({
+            "URL": sheet.cell(x, 1).value,
+            "Artist": sheet.cell(x, 2).value,
+            "Title": sheet.cell(x, 3).value,
+            "Description": sheet.cell(x, 4).value,
+            "Start": sheet.cell(x, 7).value,
+            "End": sheet.cell(x, 10).value
+        })
+
+    return answer
 
 @app.post("/dancer/")
 def create_item(dancer: Dancer):
