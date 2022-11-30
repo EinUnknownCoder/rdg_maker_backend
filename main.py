@@ -13,6 +13,16 @@ from openpyxl import load_workbook
 class Dancer(BaseModel):
     name: str
 
+class ExcelPlaylist(BaseModel):
+    countdown: bool
+    intro: bool
+    outro: bool
+    preTime: int
+    postTime: int
+    fadeInTime: int
+    fadeOutTime: int
+
+
 app = FastAPI()
 
 origins = [
@@ -32,6 +42,115 @@ app.add_middleware(
 @app.get("/")
 def read_root():
     return {"Data": "Hello World"}
+
+@app.post("/createExcelPlaylist")
+def create_item(playlist: ExcelPlaylist):
+
+    wb = load_workbook(filename="songlist.xlsx", read_only=True, data_only=True)
+    sheet = wb["Songlist"]
+    
+    monsta_x_love = {
+        "URL": "https://youtu.be/wssbMRrXRD8",
+        "Title": "LOVE",
+        "Artist": "MONSTA X",
+        "Start": 84,
+        "End": 91,
+        "Description": "Custom: Intro",
+        "Dancer": "None"
+    }
+
+    bts_run = {
+        "URL": "https://youtu.be/2WBwJD6hldA",
+        "Title": "RUN",
+        "Artist": "BTS",
+        "Start": 228,
+        "End": 233,
+        "Description": "Custom: Outro",
+        "Dancer": "None"
+    }
+
+    song_list = []
+
+    for x in range(2, sheet.max_row + 1):
+        song_list.append({
+            "URL": sheet.cell(x, 1).value,
+            "Artist": sheet.cell(x, 2).value,
+            "Title": sheet.cell(x, 3).value,
+            "Description": sheet.cell(x, 4).value,
+            "Dancer": sheet.cell(x, 5).value,
+            "Start": sheet.cell(x, 8).value,
+            "End": sheet.cell(x, 11).value
+        })
+
+    wb.close()
+
+    random.shuffle(song_list)
+
+    if(playlist.intro):
+        song_list.insert(0, monsta_x_love)
+
+    if(playlist.outro):
+        song_list.append(bts_run)
+
+    # Download mp4 files from YouTube
+    raw_folder_content = os.listdir("raw")
+    for song in song_list:
+        file_name = song["Artist"] + " - " + song["Title"] + ".mp4"
+        file_name = file_name.casefold()
+
+        if file_name not in raw_folder_content:
+            print(f"{file_name} is missing! Downloading... ")
+
+            yt = YouTube(song["URL"])
+            audio_stream = yt.streams.get_audio_only()
+            audio_stream.download("raw/", file_name)
+        else:
+            print(f"{file_name} is already downloaded.")
+
+    chapters = []
+    song_counter = 0
+    countdown = AudioSegment.from_file("Countdown_trimmed.mp3")
+    export = AudioSegment.empty()
+
+    print("Creating Export...")
+    for song in song_list:
+
+        if (playlist.countdown and not (song["Description"] == "Custom: Intro" or song["Description"] == "Custom: Outro")):
+            export += countdown
+
+        # Chapters
+        song_counter += 1
+        timestamp = time.strftime('%H:%M:%S', time.gmtime(int(export.duration_seconds)))
+        chapters.append([
+            timestamp, 
+            song_counter, 
+            " - ".join([song["Artist"], song["Title"]]),
+            f"({song['Description']})",
+            f"({song['Dancer']})"
+            ])
+
+        # Audio
+        file_name = song["Artist"] + " - " + song["Title"] + ".mp4"
+        file_name = file_name.casefold()
+        song_snippet = AudioSegment.from_file("raw/" + file_name)[(song["Start"] - playlist.preTime) * 1000:(song["End"] + playlist.postTime) * 1000].fade_in(1000 * playlist.fadeInTime).fade_out(1000 * playlist.fadeOutTime)
+        export += song_snippet
+
+
+    export_file_name = "".join([str(datetime.now().strftime("%Y-%m-%d_%H_%M_%S"))]) + ".mp3"
+
+    print("Exporting...")
+    export.export("export/" + export_file_name , format="mp3")
+
+    chapter_summary_comment = ""
+    chapter_summary_YouTube = ""
+
+    for chapter in chapters:
+        chapter_summary_comment += f"{chapter[0]} {chapter[1]} {chapter[2]} {chapter[3]} {chapter[4]}newLine"
+        chapter_summary_YouTube += f"{chapter[0]} {chapter[1]} {chapter[2]} {chapter[3]} {chapter[4]}\n"
+
+    os.system(f"""ffmpeg.exe -loop 1 -framerate 1 -i VAOimage.jpg -i export/{export_file_name} -map 0:v -map 1:a -r 10 -vf \"scale='iw-mod(iw,2)\':\'ih-mod(ih,2)\',format=yuv420p\" -movflags +faststart -shortest -fflags +shortest -max_interleave_delta 100M -metadata comment=\"{chapter_summary_comment}\" export/{export_file_name}.mp4""")
+
+    return chapter_summary_YouTube
 
 @app.get("/showExcel")
 def read_root():
@@ -78,7 +197,7 @@ def create_item(dancer: Dancer):
     con.close()
     return dancer
 
-@app.get("/createPlaylist/{dancer_ids}")
+@app.get("/createVAOPlaylist/{dancer_ids}")
 def read_item(dancer_ids):
     dancer_array = dancer_ids.split(",")
     condition_array = []
@@ -141,6 +260,7 @@ def read_item(dancer_ids):
     raw_folder_content = os.listdir("raw")
     for song in song_list:
         file_name = song["Artist"] + " - " + song["Title"] + ".mp4"
+        file_name = file_name.casefold()
 
         if file_name not in raw_folder_content:
             print(f"{file_name} is missing! Downloading... ")
@@ -170,6 +290,7 @@ def read_item(dancer_ids):
 
         # Audio
         file_name = song["Artist"] + " - " + song["Title"] + ".mp4"
+        file_name = file_name.casefold()
         song_snippet = AudioSegment.from_file("raw/" + file_name)[(song["Start"] - 10) * 1000:(song["End"] + 2) * 1000].fade_in(2000).fade_out(2000)
         export += song_snippet
 
@@ -185,7 +306,7 @@ def read_item(dancer_ids):
         chapter_summary_comment += f"{chapter[0]} {chapter[1]} {chapter[2]} {chapter[3]}newLine"
         chapter_summary_YouTube += f"{chapter[0]} {chapter[1]} {chapter[2]} {chapter[3]}\n"
 
-    os.system(f"""ffmpeg.exe -loop 1 -framerate 1 -i export/image.jpg -i export/{export_file_name} -map 0:v -map 1:a -r 10 -vf \"scale='iw-mod(iw,2)\':\'ih-mod(ih,2)\',format=yuv420p\" -movflags +faststart -shortest -fflags +shortest -max_interleave_delta 100M -metadata comment=\"{chapter_summary_comment}\" export/{export_file_name}.mp4""")
+    os.system(f"""ffmpeg.exe -loop 1 -framerate 1 -i VAOimage.jpg -i export/{export_file_name} -map 0:v -map 1:a -r 10 -vf \"scale='iw-mod(iw,2)\':\'ih-mod(ih,2)\',format=yuv420p\" -movflags +faststart -shortest -fflags +shortest -max_interleave_delta 100M -metadata comment=\"{chapter_summary_comment}\" export/{export_file_name}.mp4""")
 
     return {"Data": chapter_summary_YouTube}
 
