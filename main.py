@@ -109,7 +109,7 @@ def create_item(playlist: ExcelPlaylist):
 
     chapters = []
     song_counter = 0
-    countdown = AudioSegment.from_file("Countdown_trimmed.mp3")
+    countdown = AudioSegment.from_file("Countdown.mp3")
     export = AudioSegment.empty()
 
     print("Creating Export...")
@@ -148,7 +148,7 @@ def create_item(playlist: ExcelPlaylist):
         chapter_summary_comment += f"{chapter[0]} {chapter[1]} {chapter[2]} {chapter[3]} {chapter[4]}newLine"
         chapter_summary_YouTube += f"{chapter[0]} {chapter[1]} {chapter[2]} {chapter[3]} {chapter[4]}\n"
 
-    os.system(f"""ffmpeg.exe -loop 1 -framerate 1 -i VAOimage.jpg -i export/{export_file_name} -map 0:v -map 1:a -r 10 -vf \"scale='iw-mod(iw,2)\':\'ih-mod(ih,2)\',format=yuv420p\" -movflags +faststart -shortest -fflags +shortest -max_interleave_delta 100M -metadata comment=\"{chapter_summary_comment}\" export/{export_file_name}.mp4""")
+    os.system(f"""ffmpeg.exe -loop 1 -framerate 1 -i image.jpg -i export/{export_file_name} -map 0:v -map 1:a -r 10 -vf \"scale='iw-mod(iw,2)\':\'ih-mod(ih,2)\',format=yuv420p\" -movflags +faststart -shortest -fflags +shortest -max_interleave_delta 100M -metadata comment=\"{chapter_summary_comment}\" export/{export_file_name}.mp4""")
 
     return chapter_summary_YouTube
 
@@ -165,9 +165,12 @@ def read_root():
             "Artist": sheet.cell(x, 2).value,
             "Title": sheet.cell(x, 3).value,
             "Description": sheet.cell(x, 4).value,
-            "Start": sheet.cell(x, 7).value,
-            "End": sheet.cell(x, 10).value
+            "Dancer": sheet.cell(x, 5).value,
+            "Start": sheet.cell(x, 8).value,
+            "End": sheet.cell(x, 11).value
         })
+    
+    wb.close()
 
     return answer
 
@@ -306,7 +309,7 @@ def read_item(dancer_ids):
         chapter_summary_comment += f"{chapter[0]} {chapter[1]} {chapter[2]} {chapter[3]}newLine"
         chapter_summary_YouTube += f"{chapter[0]} {chapter[1]} {chapter[2]} {chapter[3]}\n"
 
-    os.system(f"""ffmpeg.exe -loop 1 -framerate 1 -i VAOimage.jpg -i export/{export_file_name} -map 0:v -map 1:a -r 10 -vf \"scale='iw-mod(iw,2)\':\'ih-mod(ih,2)\',format=yuv420p\" -movflags +faststart -shortest -fflags +shortest -max_interleave_delta 100M -metadata comment=\"{chapter_summary_comment}\" export/{export_file_name}.mp4""")
+    os.system(f"""ffmpeg.exe -loop 1 -framerate 1 -i image.jpg -i export/{export_file_name} -map 0:v -map 1:a -r 10 -vf \"scale='iw-mod(iw,2)\':\'ih-mod(ih,2)\',format=yuv420p\" -movflags +faststart -shortest -fflags +shortest -max_interleave_delta 100M -metadata comment=\"{chapter_summary_comment}\" export/{export_file_name}.mp4""")
 
     return {"Data": chapter_summary_YouTube}
 

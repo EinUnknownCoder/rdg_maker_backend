@@ -3,6 +3,8 @@ ffplay.exe
 ffprobe.exe
 songlist.xlsx
 ~$songlist.xlsx
+image.jpg
+Countdown.mp3
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
