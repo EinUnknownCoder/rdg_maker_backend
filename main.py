@@ -78,7 +78,7 @@ def create_item(playlist: ExcelPlaylist):
             "Title": sheet.cell(x, 3).value,
             "Description": sheet.cell(x, 4).value,
             "Dancer": sheet.cell(x, 5).value,
-            "Start": sheet.cell(x, 8).value,
+            "Start": sheet.cell(x, 10).value,
             "End": sheet.cell(x, 11).value
         })
 
@@ -107,7 +107,15 @@ def create_item(playlist: ExcelPlaylist):
         else:
             print(f"{file_name} is already downloaded.")
 
-    chapters = []
+    if (playlist.countdown and not playlist.intro):
+        chapters = [["00:00:00", 
+            0, 
+            "RDG Start",
+            "",
+            ""]]
+    else:
+        chapters = []
+
     song_counter = 0
     countdown = AudioSegment.from_file("Countdown.mp3")
     export = AudioSegment.empty()
@@ -166,7 +174,7 @@ def read_root():
             "Title": sheet.cell(x, 3).value,
             "Description": sheet.cell(x, 4).value,
             "Dancer": sheet.cell(x, 5).value,
-            "Start": sheet.cell(x, 8).value,
+            "Start": sheet.cell(x, 10).value,
             "End": sheet.cell(x, 11).value
         })
     
