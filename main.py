@@ -46,7 +46,7 @@ def read_root():
 @app.post("/createExcelPlaylist")
 def create_item(playlist: ExcelPlaylist):
 
-    wb = load_workbook(filename="songlist.xlsx", read_only=True, data_only=True)
+    wb = load_workbook(filename="songlist.xlsx", data_only=True)
     sheet = wb["Songlist"]
     
     monsta_x_love = {
@@ -141,7 +141,10 @@ def create_item(playlist: ExcelPlaylist):
         file_name = song["Artist"] + " - " + song["Title"] + ".mp4"
         file_name = file_name.casefold()
         song_snippet = AudioSegment.from_file("raw/" + file_name)[(song["Start"] - playlist.preTime) * 1000:(song["End"] + playlist.postTime) * 1000].fade_in(1000 * playlist.fadeInTime).fade_out(1000 * playlist.fadeOutTime)
-        export += song_snippet
+        if playlist.countdown:
+            export = export.append(song_snippet, crossfade=1000)
+        else:
+            export += song_snippet
 
 
     export_file_name = "".join([str(datetime.now().strftime("%Y-%m-%d_%H_%M_%S"))]) + ".mp3"
@@ -162,7 +165,7 @@ def create_item(playlist: ExcelPlaylist):
 
 @app.get("/showExcel")
 def read_root():
-    wb = load_workbook(filename="songlist.xlsx", read_only=True, data_only=True)
+    wb = load_workbook(filename="songlist.xlsx", data_only=True)
     sheet = wb["Songlist"]
 
     answer = []
