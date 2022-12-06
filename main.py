@@ -15,12 +15,15 @@ class Dancer(BaseModel):
 
 class ExcelPlaylist(BaseModel):
     countdown: bool
+    countdownCrossfade: bool
     intro: bool
     outro: bool
     preTime: int
     postTime: int
     fadeInTime: int
     fadeOutTime: int
+    countdownVoice: str
+    coverImage: str
 
 
 app = FastAPI()
@@ -117,7 +120,7 @@ def create_item(playlist: ExcelPlaylist):
         chapters = []
 
     song_counter = 0
-    countdown = AudioSegment.from_file("Countdown.mp3")
+    countdown = AudioSegment.from_file(f"templates/countdown/{playlist.countdownVoice}.mp3")
     export = AudioSegment.empty()
 
     print("Creating Export...")
@@ -141,7 +144,7 @@ def create_item(playlist: ExcelPlaylist):
         file_name = song["Artist"] + " - " + song["Title"] + ".mp4"
         file_name = file_name.casefold()
         song_snippet = AudioSegment.from_file("raw/" + file_name)[(song["Start"] - playlist.preTime) * 1000:(song["End"] + playlist.postTime) * 1000].fade_in(1000 * playlist.fadeInTime).fade_out(1000 * playlist.fadeOutTime)
-        if playlist.countdown:
+        if playlist.countdown and playlist.countdownCrossfade and not (song["Description"] == "Custom: Intro" or song["Description"] == "Custom: Outro"):
             export = export.append(song_snippet, crossfade=1000)
         else:
             export += song_snippet
@@ -159,7 +162,7 @@ def create_item(playlist: ExcelPlaylist):
         chapter_summary_comment += f"{chapter[0]} {chapter[1]} {chapter[2]} {chapter[3]} {chapter[4]}newLine"
         chapter_summary_YouTube += f"{chapter[0]} {chapter[1]} {chapter[2]} {chapter[3]} {chapter[4]}\n"
 
-    os.system(f"""ffmpeg.exe -loop 1 -framerate 1 -i image.jpg -i export/{export_file_name} -map 0:v -map 1:a -r 10 -vf \"scale='iw-mod(iw,2)\':\'ih-mod(ih,2)\',format=yuv420p\" -movflags +faststart -shortest -fflags +shortest -max_interleave_delta 100M -metadata comment=\"{chapter_summary_comment}\" export/{export_file_name}.mp4""")
+    os.system(f"""ffmpeg.exe -loop 1 -framerate 1 -i templates/image/{playlist.coverImage}.jpg -i export/{export_file_name} -map 0:v -map 1:a -r 10 -vf \"scale='iw-mod(iw,2)\':\'ih-mod(ih,2)\',format=yuv420p\" -movflags +faststart -shortest -fflags +shortest -max_interleave_delta 100M -metadata comment=\"{chapter_summary_comment}\" export/{export_file_name}.mp4""")
 
     return chapter_summary_YouTube
 
