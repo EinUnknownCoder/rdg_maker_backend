@@ -42,6 +42,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+def match_target_amplitude(sound, target_dBFS):
+    change_in_dBFS = target_dBFS - sound.dBFS
+    return sound.apply_gain(change_in_dBFS)
+
 @app.get("/")
 def read_root():
     return {"Data": "Hello World"}
@@ -75,13 +79,16 @@ def create_item(playlist: ExcelPlaylist):
     song_list = []
 
     for x in range(2, sheet.max_row + 1):
+        startTime = sheet.cell(x, 10).value
+        if(sheet.cell(x, 10).value < playlist.preTime):
+            startTime = playlist.preTime
         song_list.append({
             "URL": sheet.cell(x, 1).value,
             "Artist": sheet.cell(x, 2).value,
             "Title": sheet.cell(x, 3).value,
             "Description": sheet.cell(x, 4).value,
             "Dancer": sheet.cell(x, 5).value,
-            "Start": sheet.cell(x, 10).value,
+            "Start": startTime,
             "End": sheet.cell(x, 11).value
         })
 
@@ -107,8 +114,8 @@ def create_item(playlist: ExcelPlaylist):
             yt = YouTube(song["URL"])
             audio_stream = yt.streams.get_audio_only()
             audio_stream.download("raw/", file_name)
-        else:
-            print(f"{file_name} is already downloaded.")
+        
+    print("Download missing songs complete!")
 
     if (playlist.countdown and not playlist.intro):
         chapters = [["00:00:00", 
@@ -144,11 +151,11 @@ def create_item(playlist: ExcelPlaylist):
         file_name = song["Artist"] + " - " + song["Title"] + ".mp4"
         file_name = file_name.casefold()
         song_snippet = AudioSegment.from_file("raw/" + file_name)[(song["Start"] - playlist.preTime) * 1000:(song["End"] + playlist.postTime) * 1000].fade_in(1000 * playlist.fadeInTime).fade_out(1000 * playlist.fadeOutTime)
+        song_snippet_normalized = match_target_amplitude(song_snippet, -10.0)
         if playlist.countdown and playlist.countdownCrossfade and not (song["Description"] == "Custom: Intro" or song["Description"] == "Custom: Outro"):
-            export = export.append(song_snippet, crossfade=1000)
+            export = export.append(song_snippet_normalized, crossfade=1000)
         else:
-            export += song_snippet
-
+            export += song_snippet_normalized
 
     export_file_name = "".join([str(datetime.now().strftime("%Y-%m-%d_%H_%M_%S"))]) + ".mp3"
 
