@@ -217,7 +217,7 @@ def create_item(dancer: Dancer):
     # DROP TABLE DancerNew
     # """)
 
-    data = res.fetchall()
+    # data = res.fetchall()
     con.close()
     return dancer
 
