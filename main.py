@@ -132,7 +132,7 @@ def create_item(playlist: ExcelPlaylist):
     countdown = AudioSegment.from_file(f"templates/countdown/{playlist.countdownVoice}.mp3")
     export = AudioSegment.empty()
 
-    print("Creating Export...")
+    print("Combining the songs in a random order...")
     for song in song_list:
 
         if (playlist.countdown and not (song["Description"] == "Custom: Intro" or song["Description"] == "Custom: Outro")):
@@ -161,7 +161,7 @@ def create_item(playlist: ExcelPlaylist):
 
     export_file_name = "".join([str(datetime.now().strftime("%Y-%m-%d_%H_%M_%S"))]) + ".mp3"
 
-    print("Exporting...")
+    print("Exporting the MP3...")
     export.export("export/" + export_file_name , format="mp3")
 
     chapter_summary_comment = ""
@@ -171,7 +171,11 @@ def create_item(playlist: ExcelPlaylist):
         chapter_summary_comment += f"{chapter[0]} {chapter[1]} {chapter[2]} {chapter[3]} {chapter[4]}newLine"
         chapter_summary_YouTube += f"{chapter[0]} {chapter[1]} {chapter[2]} {chapter[3]} {chapter[4]}\n"
 
+    print("Converting the MP3 to MP4...")
+
     os.system(f"""ffmpeg.exe -loop 1 -framerate 1 -i templates/image/{playlist.coverImage}.jpg -i export/{export_file_name} -map 0:v -map 1:a -r 10 -vf \"scale='iw-mod(iw,2)\':\'ih-mod(ih,2)\',format=yuv420p\" -movflags +faststart -shortest -fflags +shortest -max_interleave_delta 100M -metadata comment=\"{chapter_summary_comment}\" export/{export_file_name}.mp4""")
+
+    print("Playlist Creation completed!")
 
     return chapter_summary_YouTube
 
