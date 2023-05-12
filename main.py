@@ -113,7 +113,7 @@ def create_item(playlist: ExcelPlaylist):
         if file_name not in raw_folder_content:
             print(f"{file_name} is missing! Downloading... ")
 
-            yt = YouTube(song["URL"], use_oauth=True, allow_oauth_cache=True)
+            yt = YouTube(song["URL"])
             audio_stream = yt.streams.get_audio_only()
             audio_stream.download("raw/", file_name)
         
