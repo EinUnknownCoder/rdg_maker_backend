@@ -24,6 +24,7 @@ class ExcelPlaylist(BaseModel):
     fadeOutTime: int
     countdownVoice: str
     coverImage: str
+    playlistAmount: int
 
 
 app = FastAPI()
@@ -49,9 +50,7 @@ def match_target_amplitude(sound, target_dBFS):
     return sound.apply_gain(change_in_dBFS)
 
 def remove_special_char_and_lower(string):
-    output = ''.join(e for e in string if e.isalnum()).lower()
-    print(output)
-    return output
+    return ''.join(e for e in string if e.isalnum()).lower()
 
 @app.get("/")
 def read_root():
