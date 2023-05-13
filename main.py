@@ -48,6 +48,11 @@ def match_target_amplitude(sound, target_dBFS):
     change_in_dBFS = target_dBFS - sound.dBFS
     return sound.apply_gain(change_in_dBFS)
 
+def remove_special_char_and_lower(string):
+    output = ''.join(e for e in string if e.isalnum()).lower()
+    print(output)
+    return output
+
 @app.get("/")
 def read_root():
     return {"Data": "Hello World"}
@@ -60,8 +65,8 @@ def create_item(playlist: ExcelPlaylist):
     
     monsta_x_love = {
         "URL": "https://youtu.be/wssbMRrXRD8",
-        "Title": "LOVE",
-        "Artist": "MONSTA X",
+        "Title": "love",
+        "Artist": "monstax",
         "Start": 84,
         "End": 91,
         "Description": "Custom: Intro",
@@ -70,8 +75,8 @@ def create_item(playlist: ExcelPlaylist):
 
     bts_run = {
         "URL": "https://youtu.be/2WBwJD6hldA",
-        "Title": "RUN",
-        "Artist": "BTS",
+        "Title": "run",
+        "Artist": "bts",
         "Start": 228,
         "End": 233,
         "Description": "Custom: Outro",
@@ -86,8 +91,8 @@ def create_item(playlist: ExcelPlaylist):
             startTime = playlist.preTime
         song_list.append({
             "URL": sheet.cell(x, 1).value,
-            "Artist": sheet.cell(x, 2).value,
-            "Title": sheet.cell(x, 3).value,
+            "Artist": remove_special_char_and_lower(sheet.cell(x, 2).value),
+            "Title": remove_special_char_and_lower(sheet.cell(x, 3).value),
             "Description": sheet.cell(x, 4).value,
             "Dancer": sheet.cell(x, 5).value,
             "Start": startTime,
