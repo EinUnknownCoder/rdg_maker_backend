@@ -50,7 +50,7 @@ def match_target_amplitude(sound, target_dBFS):
     return sound.apply_gain(change_in_dBFS)
 
 def remove_special_char_and_lower(string):
-    return ''.join(e for e in string if e.isalnum()).lower()
+    return ''.join(e for e in str(string) if e.isalnum()).lower()
 
 @app.get("/")
 def read_root():
@@ -133,13 +133,26 @@ def create_item(playlist: ExcelPlaylist):
         chapters = []
 
     song_counter = 0
-    countdown = AudioSegment.from_file(f"templates/countdown/{playlist.countdownVoice}.mp3")
+    countdown = AudioSegment.from_file(f"templates/countdown/{playlist.countdownVoice}/main.mp3")
+    countdown_dancebreak = AudioSegment.from_file(f"templates/countdown/{playlist.countdownVoice}/dancebreak.mp3")
+    countdown_blue = AudioSegment.from_file(f"templates/countdown/{playlist.countdownVoice}/blue.mp3")
+    countdown_red = AudioSegment.from_file(f"templates/countdown/{playlist.countdownVoice}/red.mp3")
     export = AudioSegment.empty()
 
     print("Combining the songs in a random order...")
     for song in song_list:
 
         if (playlist.countdown and not (song["Description"] == "Custom: Intro" or song["Description"] == "Custom: Outro")):
+            if (song["Dancer"] != None):
+                if (song["Dancer"].lower() == "blue"):
+                    export += countdown_blue
+                if (song["Dancer"].lower() == "red"):
+                    export += countdown_red
+            
+            if (song["Description"] != None):
+                if (song["Description"].lower() == "dancebreak"):
+                    export += countdown_dancebreak
+
             export += countdown
 
         # Chapters
