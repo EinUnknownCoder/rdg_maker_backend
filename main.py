@@ -23,8 +23,10 @@ class ExcelPlaylist(BaseModel):
     fadeInTime: int
     fadeOutTime: int
     countdownVoice: str
+    countdownLength: int
     coverImage: str
     playlistAmount: int
+    randomizePlaylist: bool
 
 
 app = FastAPI()
@@ -90,8 +92,10 @@ def create_item(playlist: ExcelPlaylist):
             startTime = playlist.preTime
         song_list.append({
             "URL": sheet.cell(x, 1).value,
-            "Artist": remove_special_char_and_lower(sheet.cell(x, 2).value),
-            "Title": remove_special_char_and_lower(sheet.cell(x, 3).value),
+            "Artist": sheet.cell(x, 2).value,
+            "ArtistFile": remove_special_char_and_lower(sheet.cell(x, 2).value),
+            "Title": sheet.cell(x, 3).value,
+            "TitleFile": remove_special_char_and_lower(sheet.cell(x, 3).value),
             "Description": sheet.cell(x, 4).value,
             "Dancer": sheet.cell(x, 5).value,
             "Start": startTime,
@@ -100,7 +104,9 @@ def create_item(playlist: ExcelPlaylist):
 
     wb.close()
 
-    random.shuffle(song_list)
+    if playlist.randomizePlaylist:
+        print("Randomizing the Playlist...")
+        random.shuffle(song_list)
 
     if(playlist.intro):
         song_list.insert(0, monsta_x_love)
@@ -111,8 +117,7 @@ def create_item(playlist: ExcelPlaylist):
     # Download mp4 files from YouTube
     raw_folder_content = os.listdir("raw")
     for song in song_list:
-        file_name = song["Artist"] + " - " + song["Title"] + ".mp4"
-        file_name = file_name.casefold()
+        file_name = song["ArtistFile"] + " - " + song["TitleFile"] + ".mp4"
 
         if file_name not in raw_folder_content:
             print(f"{file_name} is missing! Downloading... ")
@@ -133,13 +138,20 @@ def create_item(playlist: ExcelPlaylist):
         chapters = []
 
     song_counter = 0
-    countdown = AudioSegment.from_file(f"templates/countdown/{playlist.countdownVoice}/main.mp3")
+
+    if playlist.countdownLength == 3:
+        countdown = AudioSegment.from_file(f"templates/countdown/{playlist.countdownVoice}/three.mp3")
+    elif playlist.countdownLength == 5:
+        countdown = AudioSegment.from_file(f"templates/countdown/{playlist.countdownVoice}/five.mp3")
+    else:
+        countdown = AudioSegment.from_file(f"templates/countdown/{playlist.countdownVoice}/three.mp3")
+
     countdown_dancebreak = AudioSegment.from_file(f"templates/countdown/{playlist.countdownVoice}/dancebreak.mp3")
     countdown_blue = AudioSegment.from_file(f"templates/countdown/{playlist.countdownVoice}/blue.mp3")
     countdown_red = AudioSegment.from_file(f"templates/countdown/{playlist.countdownVoice}/red.mp3")
     export = AudioSegment.empty()
 
-    print("Combining the songs in a random order...")
+    print("Combining the songs...")
     for song in song_list:
 
         if (playlist.countdown and not (song["Description"] == "Custom: Intro" or song["Description"] == "Custom: Outro")):
@@ -167,8 +179,7 @@ def create_item(playlist: ExcelPlaylist):
             ])
 
         # Audio
-        file_name = song["Artist"] + " - " + song["Title"] + ".mp4"
-        file_name = file_name.casefold()
+        file_name = song["ArtistFile"] + " - " + song["TitleFile"] + ".mp4"
         song_snippet = AudioSegment.from_file("raw/" + file_name)[(song["Start"] - playlist.preTime) * 1000:(song["End"] + playlist.postTime) * 1000].fade_in(1000 * playlist.fadeInTime).fade_out(1000 * playlist.fadeOutTime)
         song_snippet_normalized = match_target_amplitude(song_snippet, -10.0)
         if playlist.countdown and playlist.countdownCrossfade and not (song["Description"] == "Custom: Intro" or song["Description"] == "Custom: Outro"):
