@@ -9,6 +9,7 @@ from datetime import datetime
 import time
 from pydantic import BaseModel
 from openpyxl import load_workbook
+import sys
 
 class Dancer(BaseModel):
     name: str
@@ -27,6 +28,7 @@ class ExcelPlaylist(BaseModel):
     coverImage: str
     playlistAmount: int
     randomizePlaylist: bool
+    backendConformation: bool
 
 
 app = FastAPI()
@@ -104,9 +106,24 @@ def create_item(playlist: ExcelPlaylist):
 
     wb.close()
 
+    # Playlist Randomizer
     if playlist.randomizePlaylist:
         print("Randomizing the Playlist...")
         random.shuffle(song_list)
+
+
+    if playlist.backendConformation:
+        answer = "r"
+        while answer == "r":
+            print("Proposal:")
+            for x in song_list:
+                print(f"{x['Artist']} - {x['Title']} ({x['Description']}) ({x['Dancer']})")
+            print("Any button: OK | r: Randomize again | n: Abort")
+            answer = input()
+            if answer == "n":
+                sys.exit("Operation aborted!")
+            if answer == "r":
+                random.shuffle(song_list)
 
     if(playlist.intro):
         song_list.insert(0, monsta_x_love)
