@@ -29,6 +29,7 @@ class ExcelPlaylist(BaseModel):
     playlistAmount: int
     randomizePlaylist: bool
     backendConformation: bool
+    tenSecondSilenceAtEnd: bool
 
 
 app = FastAPI()
@@ -55,6 +56,25 @@ def match_target_amplitude(sound, target_dBFS):
 
 def remove_special_char_and_lower(string):
     return ''.join(e for e in str(string) if e.isalnum()).lower()
+
+def shuffle_playlist(playlist):
+    playlist_temp = playlist
+    no_same_artist_next_to_each_other = False
+    random.shuffle(playlist_temp)
+    while no_same_artist_next_to_each_other == False:
+        count = 0
+        for x in range(len(playlist)):
+            if count > 0:
+                if playlist[x]["Artist"] == playlist[x-1]["Artist"]:
+                    print("2 Songs with the same Artist Back-to-Back! Reroll...")
+                    random.shuffle(playlist_temp)
+                    break
+            else:
+                count += 1
+        else:
+            no_same_artist_next_to_each_other = True
+    return playlist_temp
+
 
 @app.get("/")
 def read_root():
@@ -109,9 +129,9 @@ def create_item(playlist: ExcelPlaylist):
     # Playlist Randomizer
     if playlist.randomizePlaylist:
         print("Randomizing the Playlist...")
-        random.shuffle(song_list)
+        song_list = shuffle_playlist(song_list)
 
-
+    # Randomizer Reroll Backend Conformation
     if playlist.backendConformation:
         answer = "r"
         while answer == "r":
@@ -123,7 +143,7 @@ def create_item(playlist: ExcelPlaylist):
             if answer == "n":
                 sys.exit("Operation aborted!")
             if answer == "r":
-                random.shuffle(song_list)
+                song_list = shuffle_playlist(song_list)
 
     if(playlist.intro):
         song_list.insert(0, monsta_x_love)
@@ -203,6 +223,14 @@ def create_item(playlist: ExcelPlaylist):
             export = export.append(song_snippet_normalized, crossfade=1000)
         else:
             export += song_snippet_normalized
+
+    #Add 10 Seconds Silence at the end
+    if playlist.tenSecondSilenceAtEnd == True:
+        song_counter += 1
+        timestamp = time.strftime('%H:%M:%S', time.gmtime(int(export.duration_seconds)))
+        chapters.append([timestamp, song_counter, "10 Second Cooldown", "", ""])
+        
+        export += AudioSegment.silent(duration=10000)
 
     export_file_name = "".join([str(datetime.now().strftime("%Y-%m-%d_%H_%M_%S"))]) + ".mp3"
 
