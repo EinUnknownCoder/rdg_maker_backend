@@ -199,7 +199,7 @@ def create_item(playlist: ExcelPlaylist):
                     export += countdown_red
             
             if (song["Description"] != None):
-                if (song["Description"].lower() == "dancebreak"):
+                if (''.join(e for e in song["Description"] if e.isalnum()).lower() == "dancebreak"):
                     export += countdown_dancebreak
 
             export += countdown
