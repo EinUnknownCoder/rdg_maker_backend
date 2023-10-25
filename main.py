@@ -98,26 +98,7 @@ def shuffle_playlist(playlist):
             no_same_artist_next_to_each_other = True
     return playlist_temp
 
-def create_playlist(songlist, randomizePlaylist, backendConformation, intro, outro, countdownLength, countdownVoice, countdownCrossfade, tenSecondSilenceAtEnd, coverImage, preTime, postTime, fadeInTime, fadeOutTime, countdown, fileName):
-    # Playlist Randomizer
-    if randomizePlaylist:
-        print("Randomizing the Playlist...")
-        songlist = shuffle_playlist(songlist)
-
-    # Randomizer Reroll Backend Conformation
-    if backendConformation:
-        answer = "r"
-        while answer == "r":
-            print("Proposal:")
-            for x in songlist:
-                print(f"{x['Artist']} - {x['Title']} ({x['Description']}) ({x['Dancer']})")
-            print("Any button: OK | r: Randomize again | n: Abort")
-            answer = input()
-            if answer == "n":
-                sys.exit("Operation aborted!")
-            if answer == "r":
-                songlist = shuffle_playlist(songlist)
-
+def create_playlist(songlist, intro, outro, countdownLength, countdownVoice, countdownCrossfade, tenSecondSilenceAtEnd, coverImage, preTime, postTime, fadeInTime, fadeOutTime, countdown, fileName):
     if(intro):
         songlist.insert(0, monsta_x_love)
 
@@ -283,6 +264,28 @@ def create_item(playlist: ExcelPlaylist):
 
     random.shuffle(playlist_list)
 
+    for playlist_x in playlist_list:
+        # Playlist Randomizer
+        if playlist.randomizePlaylist:
+            print("Randomizing the Playlist...")
+            playlist_x = shuffle_playlist(playlist_x)
+
+        # Randomizer Reroll Backend Conformation
+        if playlist.backendConformation:
+            answer = "r"
+            while answer == "r":
+                print("Proposal:")
+                for x in playlist_x:
+                    print(f"{x['Artist']} - {x['Title']} ({x['Description']}) ({x['Dancer']})")
+                print("Any button: OK | r: Randomize again | n: Abort")
+                answer = input()
+                if answer == "n":
+                    sys.exit("Operation aborted!")
+                if answer == "r":
+                    playlist_x = shuffle_playlist(playlist_x)
+
+    
+
     if playlist.fileName == "":
         file_name = "NoFileName"
     else:
@@ -292,14 +295,14 @@ def create_item(playlist: ExcelPlaylist):
     if playlist.coverImage == "RDGStuttgart":
         for n in range(len(playlist_list) - 1):
             yt_chapter_summary += f"Playlist {n+1}\n"
-            yt_chapter_summary += create_playlist(playlist_list[n], playlist.randomizePlaylist, playlist.backendConformation, playlist.intro, playlist.outro, playlist.countdownLength, playlist.countdownVoice, playlist.countdownCrossfade, playlist.tenSecondSilenceAtEnd, playlist.coverImage, playlist.preTime, playlist.postTime, playlist.fadeInTime, playlist.fadeOutTime, playlist.countdown, f"{file_name}_Playlist_{n + 1}")
+            yt_chapter_summary += create_playlist(playlist_list[n], playlist.intro, playlist.outro, playlist.countdownLength, playlist.countdownVoice, playlist.countdownCrossfade, playlist.tenSecondSilenceAtEnd, playlist.coverImage, playlist.preTime, playlist.postTime, playlist.fadeInTime, playlist.fadeOutTime, playlist.countdown, f"{file_name}_Playlist_{n + 1}")
             yt_chapter_summary += "\n"
         yt_chapter_summary += f"Playlist {len(playlist_list)}\n"
-        yt_chapter_summary += create_playlist(playlist_list[len(playlist_list) - 1], playlist.randomizePlaylist, playlist.backendConformation, playlist.intro, playlist.outro, playlist.countdownLength, playlist.countdownVoice, playlist.countdownCrossfade, False, playlist.coverImage, playlist.preTime, playlist.postTime, playlist.fadeInTime, playlist.fadeOutTime, playlist.countdown, f"{file_name}_Playlist_{len(playlist_list)}")
+        yt_chapter_summary += create_playlist(playlist_list[len(playlist_list) - 1], playlist.intro, playlist.outro, playlist.countdownLength, playlist.countdownVoice, playlist.countdownCrossfade, False, playlist.coverImage, playlist.preTime, playlist.postTime, playlist.fadeInTime, playlist.fadeOutTime, playlist.countdown, f"{file_name}_Playlist_{len(playlist_list)}")
     else: # Für alle anderen RDGs
         for n in range(len(playlist_list)):
             yt_chapter_summary += f"Playlist {n+1}\n"
-            yt_chapter_summary += create_playlist(playlist_list[n], playlist.randomizePlaylist, playlist.backendConformation, playlist.intro, playlist.outro, playlist.countdownLength, playlist.countdownVoice, playlist.countdownCrossfade, playlist.tenSecondSilenceAtEnd, playlist.coverImage, playlist.preTime, playlist.postTime, playlist.fadeInTime, playlist.fadeOutTime, playlist.countdown, f"{file_name}_Playlist_{n + 1}")
+            yt_chapter_summary += create_playlist(playlist_list[n], playlist.intro, playlist.outro, playlist.countdownLength, playlist.countdownVoice, playlist.countdownCrossfade, playlist.tenSecondSilenceAtEnd, playlist.coverImage, playlist.preTime, playlist.postTime, playlist.fadeInTime, playlist.fadeOutTime, playlist.countdown, f"{file_name}_Playlist_{n + 1}")
             yt_chapter_summary += "\n"
 
     return yt_chapter_summary
