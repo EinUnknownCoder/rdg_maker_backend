@@ -10,6 +10,7 @@ import time
 from pydantic import BaseModel
 from openpyxl import load_workbook
 import sys
+import requests
 
 class Dancer(BaseModel):
     name: str
@@ -30,6 +31,8 @@ class ExcelPlaylist(BaseModel):
     randomizePlaylist: bool
     backendConformation: bool
     tenSecondSilenceAtEnd: bool
+    fileName: str
+    checkYTURL: bool
 
 
 app = FastAPI()
@@ -49,6 +52,26 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+monsta_x_love = {
+        "URL": "https://youtu.be/wssbMRrXRD8",
+        "Title": "love",
+        "Artist": "monstax",
+        "Start": 84,
+        "End": 91,
+        "Description": "Custom: Intro",
+        "Dancer": "None"
+    }
+
+bts_run = {
+        "URL": "https://youtu.be/2WBwJD6hldA",
+        "Title": "run",
+        "Artist": "bts",
+        "Start": 228,
+        "End": 233,
+        "Description": "Custom: Outro",
+        "Dancer": "None"
+    }
 
 def match_target_amplitude(sound, target_dBFS):
     change_in_dBFS = target_dBFS - sound.dBFS
@@ -75,85 +98,35 @@ def shuffle_playlist(playlist):
             no_same_artist_next_to_each_other = True
     return playlist_temp
 
-
-@app.get("/")
-def read_root():
-    return {"Data": "Hello World"}
-
-@app.post("/createExcelPlaylist")
-def create_item(playlist: ExcelPlaylist):
-
-    wb = load_workbook(filename="songlist.xlsx", data_only=True)
-    sheet = wb["Songlist"]
-    
-    monsta_x_love = {
-        "URL": "https://youtu.be/wssbMRrXRD8",
-        "Title": "love",
-        "Artist": "monstax",
-        "Start": 84,
-        "End": 91,
-        "Description": "Custom: Intro",
-        "Dancer": "None"
-    }
-
-    bts_run = {
-        "URL": "https://youtu.be/2WBwJD6hldA",
-        "Title": "run",
-        "Artist": "bts",
-        "Start": 228,
-        "End": 233,
-        "Description": "Custom: Outro",
-        "Dancer": "None"
-    }
-
-    song_list = []
-
-    for x in range(2, sheet.max_row + 1):
-        startTime = sheet.cell(x, 10).value
-        if(sheet.cell(x, 10).value < playlist.preTime):
-            startTime = playlist.preTime
-        song_list.append({
-            "URL": sheet.cell(x, 1).value,
-            "Artist": sheet.cell(x, 2).value,
-            "ArtistFile": remove_special_char_and_lower(sheet.cell(x, 2).value),
-            "Title": sheet.cell(x, 3).value,
-            "TitleFile": remove_special_char_and_lower(sheet.cell(x, 3).value),
-            "Description": sheet.cell(x, 4).value,
-            "Dancer": sheet.cell(x, 5).value,
-            "Start": startTime,
-            "End": sheet.cell(x, 11).value
-        })
-
-    wb.close()
-
+def create_playlist(songlist, randomizePlaylist, backendConformation, intro, outro, countdownLength, countdownVoice, countdownCrossfade, tenSecondSilenceAtEnd, coverImage, preTime, postTime, fadeInTime, fadeOutTime, countdown, fileName):
     # Playlist Randomizer
-    if playlist.randomizePlaylist:
+    if randomizePlaylist:
         print("Randomizing the Playlist...")
-        song_list = shuffle_playlist(song_list)
+        songlist = shuffle_playlist(songlist)
 
     # Randomizer Reroll Backend Conformation
-    if playlist.backendConformation:
+    if backendConformation:
         answer = "r"
         while answer == "r":
             print("Proposal:")
-            for x in song_list:
+            for x in songlist:
                 print(f"{x['Artist']} - {x['Title']} ({x['Description']}) ({x['Dancer']})")
             print("Any button: OK | r: Randomize again | n: Abort")
             answer = input()
             if answer == "n":
                 sys.exit("Operation aborted!")
             if answer == "r":
-                song_list = shuffle_playlist(song_list)
+                songlist = shuffle_playlist(songlist)
 
-    if(playlist.intro):
-        song_list.insert(0, monsta_x_love)
+    if(intro):
+        songlist.insert(0, monsta_x_love)
 
-    if(playlist.outro):
-        song_list.append(bts_run)
+    if(outro):
+        songlist.append(bts_run)
 
     # Download mp4 files from YouTube
     raw_folder_content = os.listdir("raw")
-    for song in song_list:
+    for song in songlist:
         file_name = song["ArtistFile"] + " - " + song["TitleFile"] + ".mp4"
 
         if file_name not in raw_folder_content:
@@ -165,7 +138,7 @@ def create_item(playlist: ExcelPlaylist):
         
     print("Download missing songs complete!")
 
-    if (playlist.countdown and not playlist.intro):
+    if (countdown and not intro):
         chapters = [["00:00:00", 
             0, 
             "RDG Start",
@@ -176,22 +149,22 @@ def create_item(playlist: ExcelPlaylist):
 
     song_counter = 0
 
-    if playlist.countdownLength == 3:
-        countdown = AudioSegment.from_file(f"templates/countdown/{playlist.countdownVoice}/three.mp3")
-    elif playlist.countdownLength == 5:
-        countdown = AudioSegment.from_file(f"templates/countdown/{playlist.countdownVoice}/five.mp3")
+    if countdownLength == 3:
+        countdown = AudioSegment.from_file(f"templates/countdown/{countdownVoice}/three.mp3")
+    elif countdownLength == 5:
+        countdown = AudioSegment.from_file(f"templates/countdown/{countdownVoice}/five.mp3")
     else:
-        countdown = AudioSegment.from_file(f"templates/countdown/{playlist.countdownVoice}/three.mp3")
+        countdown = AudioSegment.from_file(f"templates/countdown/{countdownVoice}/three.mp3")
 
-    countdown_dancebreak = AudioSegment.from_file(f"templates/countdown/{playlist.countdownVoice}/dancebreak.mp3")
-    countdown_blue = AudioSegment.from_file(f"templates/countdown/{playlist.countdownVoice}/blue.mp3")
-    countdown_red = AudioSegment.from_file(f"templates/countdown/{playlist.countdownVoice}/red.mp3")
+    countdown_dancebreak = AudioSegment.from_file(f"templates/countdown/{countdownVoice}/dancebreak.mp3")
+    countdown_blue = AudioSegment.from_file(f"templates/countdown/{countdownVoice}/blue.mp3")
+    countdown_red = AudioSegment.from_file(f"templates/countdown/{countdownVoice}/red.mp3")
     export = AudioSegment.empty()
 
     print("Combining the songs...")
-    for song in song_list:
+    for song in songlist:
 
-        if (playlist.countdown and not (song["Description"] == "Custom: Intro" or song["Description"] == "Custom: Outro")):
+        if (countdown and not (song["Description"] == "Custom: Intro" or song["Description"] == "Custom: Outro")):
             if (song["Dancer"] != None):
                 if (song["Dancer"].lower() == "blue"):
                     export += countdown_blue
@@ -217,22 +190,28 @@ def create_item(playlist: ExcelPlaylist):
 
         # Audio
         file_name = song["ArtistFile"] + " - " + song["TitleFile"] + ".mp4"
-        song_snippet = AudioSegment.from_file("raw/" + file_name)[(song["Start"] - playlist.preTime) * 1000:(song["End"] + playlist.postTime) * 1000].fade_in(1000 * playlist.fadeInTime).fade_out(1000 * playlist.fadeOutTime)
+        song_snippet = AudioSegment.from_file("raw/" + file_name)[(song["Start"] - preTime) * 1000:(song["End"] + postTime) * 1000].fade_in(1000 * fadeInTime).fade_out(1000 * fadeOutTime)
         song_snippet_normalized = match_target_amplitude(song_snippet, -10.0)
-        if playlist.countdown and playlist.countdownCrossfade and not (song["Description"] == "Custom: Intro" or song["Description"] == "Custom: Outro"):
+        if countdown and countdownCrossfade and not (song["Description"] == "Custom: Intro" or song["Description"] == "Custom: Outro"):
             export = export.append(song_snippet_normalized, crossfade=1000)
         else:
             export += song_snippet_normalized
 
     #Add 10 Seconds Silence at the end
-    if playlist.tenSecondSilenceAtEnd == True:
+    if tenSecondSilenceAtEnd == True:
         song_counter += 1
         timestamp = time.strftime('%H:%M:%S', time.gmtime(int(export.duration_seconds)))
         chapters.append([timestamp, song_counter, "10 Second Cooldown", "", ""])
         
         export += AudioSegment.silent(duration=10000)
+    
+    if "NoFileName" in fileName:
+        export_file_name = f"{''.join([str(datetime.now().strftime('%Y-%m-%d_%H_%M_%S'))])}{fileName}.mp3"
+    else:
+        export_file_name = fileName + ".mp3"
 
-    export_file_name = "".join([str(datetime.now().strftime("%Y-%m-%d_%H_%M_%S"))]) + ".mp3"
+    #Entfernt Leerzeichen im String, ansonsten funktioniert der MMPEG Export nicht
+    export_file_name = export_file_name.replace(" ", "")
 
     print("Exporting the MP3...")
     export.export("export/" + export_file_name , format="mp3")
@@ -246,11 +225,84 @@ def create_item(playlist: ExcelPlaylist):
 
     print("Converting the MP3 to MP4...")
 
-    os.system(f"""ffmpeg.exe -loop 1 -framerate 1 -i templates/image/{playlist.coverImage}.jpg -i export/{export_file_name} -map 0:v -map 1:a -r 10 -vf \"scale='iw-mod(iw,2)\':\'ih-mod(ih,2)\',format=yuv420p\" -movflags +faststart -shortest -fflags +shortest -max_interleave_delta 100M -metadata comment=\"{chapter_summary_comment}\" export/{export_file_name}.mp4""")
+    os.system(f"""ffmpeg.exe -loop 1 -framerate 1 -i templates/image/{coverImage}.jpg -i export/{export_file_name} -map 0:v -map 1:a -r 10 -vf \"scale='iw-mod(iw,2)\':\'ih-mod(ih,2)\',format=yuv420p\" -movflags +faststart -shortest -fflags +shortest -max_interleave_delta 100M -metadata comment=\"{chapter_summary_comment}\" export/{export_file_name}.mp4""")
 
     print("Playlist Creation completed!")
-
     return chapter_summary_YouTube
+
+@app.get("/")
+def read_root():
+    return {"Data": "Hello World"}
+
+@app.post("/createExcelPlaylist")
+def create_item(playlist: ExcelPlaylist):
+
+    wb = load_workbook(filename="songlist.xlsx", data_only=True)
+    sheet = wb["Songlist"]
+
+    song_list = []
+
+    for x in range(2, sheet.max_row + 1):
+        startTime = sheet.cell(x, 10).value
+        if(sheet.cell(x, 10).value < playlist.preTime):
+            startTime = playlist.preTime
+        
+        # Kontrolliert, ob die Startzeit vor der Endzeit ist
+        if sheet.cell(x, 11).value <= startTime:
+            print(f"Fehler bei {sheet.cell(x, 3).value}: Startzeit ist größer als die Endzeit")
+            return f"Fehler bei '{sheet.cell(x, 3).value}': Startzeit ({startTime}) ist größer als die Endzeit ({sheet.cell(x, 11).value})"
+
+        song_list.append({
+            "URL": sheet.cell(x, 1).value,
+            "Artist": sheet.cell(x, 2).value,
+            "ArtistFile": remove_special_char_and_lower(sheet.cell(x, 2).value),
+            "Title": sheet.cell(x, 3).value,
+            "TitleFile": remove_special_char_and_lower(sheet.cell(x, 3).value),
+            "Description": sheet.cell(x, 4).value,
+            "Dancer": sheet.cell(x, 5).value,
+            "Start": startTime,
+            "End": sheet.cell(x, 11).value
+        })
+
+    wb.close()
+
+    # Kontrolliert, ob alle YT URLs gültig sind
+    if playlist.checkYTURL:
+        for yt in song_list:
+            print(f"Testing URL of -{yt['Title']}-")
+            r = requests.get(yt["URL"])
+            if "unavailable/unavailable_video.png" in r.text:
+                return f"-{yt['Title']}- deren URL funktioniert nicht"
+
+    playlist_list = [[] for i in range(playlist.playlistAmount)]
+
+    yt_chapter_summary = ""
+
+    for song in song_list:
+        min(playlist_list, key=len).append(song)
+
+    random.shuffle(playlist_list)
+
+    if playlist.fileName == "":
+        file_name = "NoFileName"
+    else:
+        file_name = playlist.fileName
+
+    # Extra für Stuttgart: Letzte Playlist soll KEINEN 10-Sekunden Cooldown haben
+    if playlist.coverImage == "RDGStuttgart":
+        for n in range(len(playlist_list) - 1):
+            yt_chapter_summary += f"Playlist {n+1}\n"
+            yt_chapter_summary += create_playlist(playlist_list[n], playlist.randomizePlaylist, playlist.backendConformation, playlist.intro, playlist.outro, playlist.countdownLength, playlist.countdownVoice, playlist.countdownCrossfade, playlist.tenSecondSilenceAtEnd, playlist.coverImage, playlist.preTime, playlist.postTime, playlist.fadeInTime, playlist.fadeOutTime, playlist.countdown, f"{file_name}_Playlist_{n + 1}")
+            yt_chapter_summary += "\n"
+        yt_chapter_summary += f"Playlist {len(playlist_list)}\n"
+        yt_chapter_summary += create_playlist(playlist_list[len(playlist_list) - 1], playlist.randomizePlaylist, playlist.backendConformation, playlist.intro, playlist.outro, playlist.countdownLength, playlist.countdownVoice, playlist.countdownCrossfade, False, playlist.coverImage, playlist.preTime, playlist.postTime, playlist.fadeInTime, playlist.fadeOutTime, playlist.countdown, f"{file_name}_Playlist_{len(playlist_list)}")
+    else: # Für alle anderen RDGs
+        for n in range(len(playlist_list)):
+            yt_chapter_summary += f"Playlist {n+1}\n"
+            yt_chapter_summary += create_playlist(playlist_list[n], playlist.randomizePlaylist, playlist.backendConformation, playlist.intro, playlist.outro, playlist.countdownLength, playlist.countdownVoice, playlist.countdownCrossfade, playlist.tenSecondSilenceAtEnd, playlist.coverImage, playlist.preTime, playlist.postTime, playlist.fadeInTime, playlist.fadeOutTime, playlist.countdown, f"{file_name}_Playlist_{n + 1}")
+            yt_chapter_summary += "\n"
+
+    return yt_chapter_summary
 
 @app.get("/showExcel")
 def read_root():
