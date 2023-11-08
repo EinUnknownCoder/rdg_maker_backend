@@ -33,6 +33,7 @@ class ExcelPlaylist(BaseModel):
     tenSecondSilenceAtEnd: bool
     fileName: str
     checkYTURL: bool
+    removeDancer: bool
 
 
 app = FastAPI()
@@ -98,7 +99,7 @@ def shuffle_playlist(playlist):
             no_same_artist_next_to_each_other = True
     return playlist_temp
 
-def create_playlist(songlist, intro, outro, countdownLength, countdownVoice, countdownCrossfade, tenSecondSilenceAtEnd, coverImage, preTime, postTime, fadeInTime, fadeOutTime, countdown, fileName):
+def create_playlist(songlist, intro, outro, countdownLength, countdownVoice, countdownCrossfade, tenSecondSilenceAtEnd, coverImage, preTime, postTime, fadeInTime, fadeOutTime, countdown, fileName, removeDancer):
     if(intro):
         songlist.insert(0, monsta_x_love)
 
@@ -200,9 +201,14 @@ def create_playlist(songlist, intro, outro, countdownLength, countdownVoice, cou
     chapter_summary_comment = ""
     chapter_summary_YouTube = ""
 
-    for chapter in chapters:
-        chapter_summary_comment += f"{chapter[0]} {chapter[1]} {chapter[2]} {chapter[3]} {chapter[4]}newLine"
-        chapter_summary_YouTube += f"{chapter[0]} {chapter[1]} {chapter[2]} {chapter[3]} {chapter[4]}\n"
+    if removeDancer:
+        for chapter in chapters:
+            chapter_summary_comment += f"{chapter[0]} {chapter[1]} {chapter[2]} {chapter[3]}newLine"
+            chapter_summary_YouTube += f"{chapter[0]} {chapter[1]} {chapter[2]} {chapter[3]}\n"
+    else:
+        for chapter in chapters:
+            chapter_summary_comment += f"{chapter[0]} {chapter[1]} {chapter[2]} {chapter[3]} {chapter[4]}newLine"
+            chapter_summary_YouTube += f"{chapter[0]} {chapter[1]} {chapter[2]} {chapter[3]} {chapter[4]}\n"
 
     print("Converting the MP3 to MP4...")
 
@@ -254,6 +260,14 @@ def create_item(playlist: ExcelPlaylist):
             r = requests.get(yt["URL"])
             if "unavailable/unavailable_video.png" in r.text:
                 return f"-{yt['Title']}- deren URL funktioniert nicht"
+            search_title = ''.join(e for e in yt["Title"] if e.isalnum()).lower()
+            search_string = r.text
+            search_string = search_string.lower()
+            search_string = search_string.replace("&amp;", "") #Remove "&"
+            search_string = search_string.replace("&#39;", "") #Remove "'"
+            search_string = ''.join(e for e in search_string if e.isalnum())
+            if search_title not in search_string:
+                return f"-{yt['Title']}- hat die falsche URL (falscher Song?)\n{''.join(e for e in yt['Title'] if e.isalnum()).lower()}\n\nVanillaHTML\n{r.text}\n\nNewHTML\n{''.join(e for e in r.text if e.isalnum()).lower().replace('&amp;', '')}"
 
     playlist_list = [[] for i in range(playlist.playlistAmount)]
 
@@ -295,14 +309,14 @@ def create_item(playlist: ExcelPlaylist):
     if playlist.coverImage == "RDGStuttgart":
         for n in range(len(playlist_list) - 1):
             yt_chapter_summary += f"Playlist {n+1}\n"
-            yt_chapter_summary += create_playlist(playlist_list[n], playlist.intro, playlist.outro, playlist.countdownLength, playlist.countdownVoice, playlist.countdownCrossfade, playlist.tenSecondSilenceAtEnd, playlist.coverImage, playlist.preTime, playlist.postTime, playlist.fadeInTime, playlist.fadeOutTime, playlist.countdown, f"{file_name}_Playlist_{n + 1}")
+            yt_chapter_summary += create_playlist(playlist_list[n], playlist.intro, playlist.outro, playlist.countdownLength, playlist.countdownVoice, playlist.countdownCrossfade, playlist.tenSecondSilenceAtEnd, playlist.coverImage, playlist.preTime, playlist.postTime, playlist.fadeInTime, playlist.fadeOutTime, playlist.countdown, f"{file_name}_Playlist_{n + 1}", playlist.removeDancer)
             yt_chapter_summary += "\n"
         yt_chapter_summary += f"Playlist {len(playlist_list)}\n"
-        yt_chapter_summary += create_playlist(playlist_list[len(playlist_list) - 1], playlist.intro, playlist.outro, playlist.countdownLength, playlist.countdownVoice, playlist.countdownCrossfade, False, playlist.coverImage, playlist.preTime, playlist.postTime, playlist.fadeInTime, playlist.fadeOutTime, playlist.countdown, f"{file_name}_Playlist_{len(playlist_list)}")
+        yt_chapter_summary += create_playlist(playlist_list[len(playlist_list) - 1], playlist.intro, playlist.outro, playlist.countdownLength, playlist.countdownVoice, playlist.countdownCrossfade, False, playlist.coverImage, playlist.preTime, playlist.postTime, playlist.fadeInTime, playlist.fadeOutTime, playlist.countdown, f"{file_name}_Playlist_{len(playlist_list)}", playlist.removeDancer)
     else: # Für alle anderen RDGs
         for n in range(len(playlist_list)):
             yt_chapter_summary += f"Playlist {n+1}\n"
-            yt_chapter_summary += create_playlist(playlist_list[n], playlist.intro, playlist.outro, playlist.countdownLength, playlist.countdownVoice, playlist.countdownCrossfade, playlist.tenSecondSilenceAtEnd, playlist.coverImage, playlist.preTime, playlist.postTime, playlist.fadeInTime, playlist.fadeOutTime, playlist.countdown, f"{file_name}_Playlist_{n + 1}")
+            yt_chapter_summary += create_playlist(playlist_list[n], playlist.intro, playlist.outro, playlist.countdownLength, playlist.countdownVoice, playlist.countdownCrossfade, playlist.tenSecondSilenceAtEnd, playlist.coverImage, playlist.preTime, playlist.postTime, playlist.fadeInTime, playlist.fadeOutTime, playlist.countdown, f"{file_name}_Playlist_{n + 1}", playlist.removeDancer)
             yt_chapter_summary += "\n"
 
     return yt_chapter_summary
