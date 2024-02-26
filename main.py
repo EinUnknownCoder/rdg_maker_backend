@@ -34,6 +34,7 @@ class ExcelPlaylist(BaseModel):
     fileName: str
     checkYTURL: bool
     removeDancer: bool
+    checkYTURLPosition: int
 
 
 app = FastAPI()
@@ -255,28 +256,48 @@ def create_item(playlist: ExcelPlaylist):
 
     # Kontrolliert, ob alle YT URLs gültig sind
     if playlist.checkYTURL:
+        count = 0
         for yt in song_list:
+            count += 1
             print(f"Testing URL of -{yt['Title']}-")
-            r = requests.get(yt["URL"])
-            if "unavailable/unavailable_video.png" in r.text:
-                return f"-{yt['Title']}- deren URL funktioniert nicht"
-            search_title = ''.join(e for e in yt["Title"] if e.isalnum()).lower()
-            search_string = r.text
-            search_string = search_string.lower()
-            search_string = search_string.replace("&amp;", "") #Remove "&"
-            search_string = search_string.replace("&#39;", "") #Remove "'"
-            search_string = ''.join(e for e in search_string if e.isalnum())
-            if search_title not in search_string:
-                return f"-{yt['Title']}- hat die falsche URL (falscher Song?)\n{''.join(e for e in yt['Title'] if e.isalnum()).lower()}\n\nVanillaHTML\n{r.text}\n\nNewHTML\n{''.join(e for e in r.text if e.isalnum()).lower().replace('&amp;', '')}"
+            if count < playlist.checkYTURLPosition:
+                print("URL is already tested and will be skipped...")
+            else: 
+                r = requests.get(yt["URL"])
+                if "unavailable/unavailable_video.png" in r.text:
+                    return f"-{yt['Title']}- deren URL funktioniert nicht\n{count}"
+                search_title = ''.join(e for e in str(yt["Title"]) if e.isalnum()).lower()
+                search_string = r.text
+                search_string = search_string.lower()
+                search_string = search_string.replace("&amp;", "") #Remove "&"
+                search_string = search_string.replace("&#39;", "") #Remove "'"
+                search_string = ''.join(e for e in search_string if e.isalnum())
+                if search_title not in search_string:
+                    return f"-{yt['Title']}- hat die falsche URL (falscher Song?)\n{''.join(e for e in yt['Title'] if e.isalnum()).lower()}\n{count}\n\nVanillaHTML\n{r.text}\n\nNewHTML\n{''.join(e for e in r.text if e.isalnum()).lower().replace('&amp;', '')}"
 
     playlist_list = [[] for i in range(playlist.playlistAmount)]
 
     yt_chapter_summary = ""
 
-    for song in song_list:
-        min(playlist_list, key=len).append(song)
+    song_list_2 = []
 
-    random.shuffle(playlist_list)
+    # Putting specific Songs into specific Playlist
+    for song in song_list:
+        if song["Dancer"] is not None:
+            dancer_name = ''.join(e for e in song["Dancer"] if e.isalnum()).lower()
+            if "playlist" in dancer_name:
+                print(f"Special instruction: \"{song['Title']}\" will be in Playlist {dancer_name[-1]}")
+                playlist_list[int(dancer_name[-1]) - 1].append(song)
+        else:
+            song_list_2.append(song)
+
+    # Distribute Songs into the amount of requested Playlist
+    for song_2 in song_list_2:
+        min(playlist_list, key=len).append(song_2)
+
+    # Shuffle Playlist
+    # Disabled, or "# Putting specific Songs into specific Playlist" won't work!
+    # random.shuffle(playlist_list)
 
     for playlist_x in playlist_list:
         # Playlist Randomizer
