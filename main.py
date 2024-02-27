@@ -240,11 +240,14 @@ def create_item(playlist: ExcelPlaylist):
             print(f"Fehler bei {sheet.cell(x, 3).value}: Startzeit ist größer als die Endzeit")
             return f"Fehler bei '{sheet.cell(x, 3).value}': Startzeit ({startTime}) ist größer als die Endzeit ({sheet.cell(x, 11).value})"
 
+        # Wandelt Titel von int zu String um (Bsp: 458 von CIX)
+        title = str(sheet.cell(x, 3).value)
+
         song_list.append({
             "URL": sheet.cell(x, 1).value,
             "Artist": sheet.cell(x, 2).value,
             "ArtistFile": remove_special_char_and_lower(sheet.cell(x, 2).value),
-            "Title": sheet.cell(x, 3).value,
+            "Title": title,
             "TitleFile": remove_special_char_and_lower(sheet.cell(x, 3).value),
             "Description": sheet.cell(x, 4).value,
             "Dancer": sheet.cell(x, 5).value,
@@ -288,6 +291,8 @@ def create_item(playlist: ExcelPlaylist):
             if "playlist" in dancer_name:
                 print(f"Special instruction: \"{song['Title']}\" will be in Playlist {dancer_name[-1]}")
                 playlist_list[int(dancer_name[-1]) - 1].append(song)
+            else:
+                song_list_2.append(song)
         else:
             song_list_2.append(song)
 
