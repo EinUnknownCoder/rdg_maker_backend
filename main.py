@@ -237,7 +237,7 @@ def create_item(playlist: ExcelPlaylist):
         
         # Kontrolliert, ob die Startzeit vor der Endzeit ist
         if sheet.cell(x, 11).value <= startTime:
-            print(f"Fehler bei {sheet.cell(x, 3).value}: Startzeit ist größer als die Endzeit")
+            print(f"Fehler bei {sheet.cell(x, 3).value} (Position {x}): Startzeit ist größer als die Endzeit")
             return f"Fehler bei '{sheet.cell(x, 3).value}': Startzeit ({startTime}) ist größer als die Endzeit ({sheet.cell(x, 11).value})"
 
         # Wandelt Titel von int zu String um (Bsp: 458 von CIX)
