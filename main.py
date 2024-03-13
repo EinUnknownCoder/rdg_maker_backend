@@ -111,14 +111,30 @@ def create_playlist(songlist, intro, outro, countdownLength, countdownVoice, cou
     # Download mp4 files from YouTube
     raw_folder_content = os.listdir("raw")
     for song in songlist:
-        file_name = song["ArtistFile"] + " - " + song["TitleFile"] + ".mp4"
+        file_name = song["ArtistFile"] + " - " + song["TitleFile"] + ".m4a"
 
         if file_name not in raw_folder_content:
             print(f"{file_name} is missing! Downloading... ")
 
-            yt = YouTube(song["URL"])
+            # Old: PyTube  
+            """ yt = YouTube(song["URL"])
             audio_stream = yt.streams.get_audio_only()
-            audio_stream.download("raw/", file_name)
+            audio_stream.download("raw/", file_name) """
+
+            URLS = [song["URL"]]
+
+            ydl_opts = {
+                'format': 'm4a/bestaudio/best',
+                # ℹ️ See help(yt_dlp.postprocessor) for a list of available Postprocessors and their arguments
+                'postprocessors': [{  # Extract audio using ffmpeg
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'm4a',
+                }],
+                'outtmpl': f'raw/{file_name}'
+            }
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                error_code = ydl.download(URLS)
+            
         
     print("Download missing songs complete!")
 
@@ -173,7 +189,7 @@ def create_playlist(songlist, intro, outro, countdownLength, countdownVoice, cou
             ])
 
         # Audio
-        file_name = song["ArtistFile"] + " - " + song["TitleFile"] + ".mp4"
+        file_name = song["ArtistFile"] + " - " + song["TitleFile"] + ".m4a"
         song_snippet = AudioSegment.from_file("raw/" + file_name)[(song["Start"] - preTime) * 1000:(song["End"] + postTime) * 1000].fade_in(1000 * fadeInTime).fade_out(1000 * fadeOutTime)
         song_snippet_normalized = match_target_amplitude(song_snippet, -10.0)
         if countdown and countdownCrossfade and not (song["Description"] == "Custom: Intro" or song["Description"] == "Custom: Outro"):
@@ -267,17 +283,23 @@ def create_item(playlist: ExcelPlaylist):
             if count < playlist.checkYTURLPosition:
                 print("URL is already tested and will be skipped...")
             else: 
-                r = requests.get(yt["URL"])
-                if "unavailable/unavailable_video.png" in r.text:
-                    return f"-{yt['Title']}- deren URL funktioniert nicht\n{count}"
                 search_title = ''.join(e for e in str(yt["Title"]) if e.isalnum()).lower()
-                search_string = r.text
-                search_string = search_string.lower()
-                search_string = search_string.replace("&amp;", "") #Remove "&"
-                search_string = search_string.replace("&#39;", "") #Remove "'"
-                search_string = ''.join(e for e in search_string if e.isalnum())
+                
+                # Old
+                """ r = requests.get(yt["URL"])
+                if "unavailable/unavailable_video.png" in r.text:
+                    return f"-{yt['Title']}- deren URL funktioniert nicht\n{count}" """
+                
+                # ℹ️ See help(yt_dlp.YoutubeDL) for a list of available options and public functions
+                ydl_opts = {}
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    info = ydl.extract_info(yt["URL"], download=False)
+
+                    # ℹ️ ydl.sanitize_info makes the info json-serializable
+                    search_string = ''.join(e for e in str(info['title']) if e.isalnum()).lower()
+
                 if search_title not in search_string:
-                    return f"-{yt['Title']}- hat die falsche URL (falscher Song?)\n{''.join(e for e in yt['Title'] if e.isalnum()).lower()}\n{count}\n\nVanillaHTML\n{r.text}\n\nNewHTML\n{''.join(e for e in r.text if e.isalnum()).lower().replace('&amp;', '')}"
+                    return f"-{yt['Title']}- hat die falsche URL (falscher Song?)\n{''.join(e for e in yt['Title'] if e.isalnum()).lower()}\n{count}\n\nVanillaHTML\n{info['title']}\n\nNewHTML\n{''.join(e for e in info['title'] if e.isalnum()).lower()}"
 
     playlist_list = [[] for i in range(playlist.playlistAmount)]
 
