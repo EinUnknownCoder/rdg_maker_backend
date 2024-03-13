@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from openpyxl import load_workbook
 import sys
 import requests
+import yt_dlp
 
 class Dancer(BaseModel):
     name: str
