@@ -159,6 +159,8 @@ def create_playlist(songlist, intro, outro, countdownLength, countdownVoice, cou
     countdown_dancebreak = AudioSegment.from_file(f"templates/countdown/{countdownVoice}/dancebreak.mp3")
     countdown_blue = AudioSegment.from_file(f"templates/countdown/{countdownVoice}/blue.mp3")
     countdown_red = AudioSegment.from_file(f"templates/countdown/{countdownVoice}/red.mp3")
+    countdown_cool = AudioSegment.from_file(f"templates/countdown/{countdownVoice}/cool.mp3")
+    countdown_warm = AudioSegment.from_file(f"templates/countdown/{countdownVoice}/warm.mp3")
     export = AudioSegment.empty()
 
     print("Combining the songs...")
@@ -170,6 +172,10 @@ def create_playlist(songlist, intro, outro, countdownLength, countdownVoice, cou
                     export += countdown_blue
                 if (song["Dancer"].lower() == "red"):
                     export += countdown_red
+                if (song["Dancer"].lower() == "cool"):
+                    export += countdown_cool
+                if (song["Dancer"].lower() == "warm"):
+                    export += countdown_warm
             
             if (song["Description"] != None):
                 if (''.join(e for e in song["Description"] if e.isalnum()).lower() == "dancebreak"):
