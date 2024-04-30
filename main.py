@@ -492,8 +492,8 @@ def read_item(dancer_ids):
 
             # Won't work because pytube is no more
             # yt = YouTube(song["URL"]) 
-            audio_stream = yt.streams.get_audio_only()
-            audio_stream.download("raw/", file_name)
+            # audio_stream = yt.streams.get_audio_only()
+            # audio_stream.download("raw/", file_name)
         else:
             print(f"{file_name} is already downloaded.")
 
