@@ -2,7 +2,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import sqlite3
 import os
-from pytube import YouTube
 import random
 from pydub import AudioSegment
 from datetime import datetime
@@ -10,7 +9,6 @@ import time
 from pydantic import BaseModel
 from openpyxl import load_workbook
 import sys
-import requests
 import yt_dlp
 
 class Dancer(BaseModel):
@@ -495,9 +493,10 @@ def read_item(dancer_ids):
         if file_name not in raw_folder_content:
             print(f"{file_name} is missing! Downloading... ")
 
-            yt = YouTube(song["URL"])
-            audio_stream = yt.streams.get_audio_only()
-            audio_stream.download("raw/", file_name)
+            # Won't work because pytube is no more
+            # yt = YouTube(song["URL"]) 
+            # audio_stream = yt.streams.get_audio_only()
+            # audio_stream.download("raw/", file_name)
         else:
             print(f"{file_name} is already downloaded.")
 
@@ -539,6 +538,7 @@ def read_item(dancer_ids):
     os.system(f"""ffmpeg.exe -loop 1 -framerate 1 -i image.jpg -i export/{export_file_name} -map 0:v -map 1:a -r 10 -vf \"scale='iw-mod(iw,2)\':\'ih-mod(ih,2)\',format=yuv420p\" -movflags +faststart -shortest -fflags +shortest -max_interleave_delta 100M -metadata comment=\"{chapter_summary_comment}\" export/{export_file_name}.mp4""")
 
     return {"Data": chapter_summary_YouTube}
+
 
 @app.get("/showPreview/{dancer_ids}")
 def read_item(dancer_ids):
