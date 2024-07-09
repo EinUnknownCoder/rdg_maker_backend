@@ -161,6 +161,7 @@ def create_playlist(songlist, intro, outro, countdownLength, countdownVoice, cou
     countdown_red = AudioSegment.from_file(f"templates/countdown/{countdownVoice}/red.mp3")
     countdown_cool = AudioSegment.from_file(f"templates/countdown/{countdownVoice}/cool.mp3")
     countdown_warm = AudioSegment.from_file(f"templates/countdown/{countdownVoice}/warm.mp3")
+    countdown_summer = AudioSegment.from_file(f"templates/countdown/{countdownVoice}/summer.mp3")
     export = AudioSegment.empty()
 
     print("Combining the songs...")
@@ -176,6 +177,8 @@ def create_playlist(songlist, intro, outro, countdownLength, countdownVoice, cou
                     export += countdown_cool
                 if (song["Dancer"].lower() == "warm"):
                     export += countdown_warm
+                if (song["Dancer"].lower() == "summer"):
+                    export += countdown_summer
             
             if (song["Description"] != None):
                 if (''.join(e for e in song["Description"] if e.isalnum()).lower() == "dancebreak"):
@@ -305,7 +308,7 @@ def create_item(playlist: ExcelPlaylist):
                     search_string = ''.join(e for e in str(info['title']) if e.isalnum()).lower()
 
                 if search_title not in search_string:
-                    return f"-{yt['Title']}- hat die falsche URL (falscher Song?)\n{''.join(e for e in yt['Title'] if e.isalnum()).lower()}\n{count}\n\nVanillaHTML\n{info['title']}\n\nNewHTML\n{''.join(e for e in info['title'] if e.isalnum()).lower()}"
+                    return f"-{yt['Title']}- hat die falsche URL (falscher Song?)\n{''.join(e for e in yt['Title'] if e.isalnum()).lower()}\n{count}\n{info['title']}n{''.join(e for e in info['title'] if e.isalnum()).lower()}"
 
     playlist_list = [[] for i in range(playlist.playlistAmount)]
 
