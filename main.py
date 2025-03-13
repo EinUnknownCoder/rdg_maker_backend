@@ -363,14 +363,20 @@ def create_item(playlist: ExcelPlaylist):
                 if answer == "r":
                     playlist_x = shuffle_playlist(playlist_x)
 
-    
-
+    file_name = f'{datetime.today().strftime("%Y-%m-%d")}_'
     if playlist.fileName == "":
-        file_name = "NoFileName"
+        file_name += "NoFileName"
     else:
-        file_name = playlist.fileName
+        file_name += playlist.fileName
 
+    for n in range(len(playlist_list)):
+        yt_chapter_summary += f"Playlist {n+1}\n"
+        yt_chapter_summary += create_playlist(playlist_list[n], playlist.intro, playlist.outro, playlist.countdownLength, playlist.countdownVoice, playlist.countdownCrossfade, playlist.tenSecondSilenceAtEnd, playlist.coverImage, playlist.preTime, playlist.postTime, playlist.fadeInTime, playlist.fadeOutTime, playlist.countdown, f"{file_name}_Playlist_{n + 1}", playlist.removeDancer)
+        yt_chapter_summary += "\n"
+
+    # NICHT MEHR NOTWENDIG
     # Extra für Stuttgart: Letzte Playlist soll KEINEN 10-Sekunden Cooldown haben
+    """
     if playlist.coverImage == "RDGStuttgart":
         for n in range(len(playlist_list) - 1):
             yt_chapter_summary += f"Playlist {n+1}\n"
@@ -383,6 +389,7 @@ def create_item(playlist: ExcelPlaylist):
             yt_chapter_summary += f"Playlist {n+1}\n"
             yt_chapter_summary += create_playlist(playlist_list[n], playlist.intro, playlist.outro, playlist.countdownLength, playlist.countdownVoice, playlist.countdownCrossfade, playlist.tenSecondSilenceAtEnd, playlist.coverImage, playlist.preTime, playlist.postTime, playlist.fadeInTime, playlist.fadeOutTime, playlist.countdown, f"{file_name}_Playlist_{n + 1}", playlist.removeDancer)
             yt_chapter_summary += "\n"
+    """
 
     return yt_chapter_summary
 
