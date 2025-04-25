@@ -163,6 +163,7 @@ def create_playlist(songlist, intro, outro, countdownLength, countdownVoice, cou
     countdown_pink = AudioSegment.from_file(f"templates/countdown/{countdownVoice}/pink.mp3")
     countdown_18plus = AudioSegment.from_file(f"templates/countdown/{countdownVoice}/18plus.mp3")
     countdown_green = AudioSegment.from_file(f"templates/countdown/{countdownVoice}/green.mp3")
+    countdown_dancestudio = AudioSegment.from_file(f"templates/countdown/{countdownVoice}/dancestudio.mp3")
     export = AudioSegment.empty()
 
     print("Combining the songs...")
@@ -186,6 +187,8 @@ def create_playlist(songlist, intro, outro, countdownLength, countdownVoice, cou
                     export += countdown_green
             
             if (song["Description"] != None):
+                if ("dancestudio" in ''.join(e for e in song["Description"] if e.isalnum()).lower()):
+                    export += countdown_dancestudio
                 if ("18plus" in ''.join(e for e in song["Description"] if e.isalnum()).lower()):
                     export += countdown_18plus
                 if ("dancebreak" in ''.join(e for e in song["Description"] if e.isalnum()).lower()):
