@@ -5,7 +5,7 @@
 [FFMPEG Download](https://ffmpeg.org/download.html)
 ffmpeg.exe & ffprobe.exe needed
 
-uvicorn main:app --reload
+fastapi dev main.py
 
 TTS by https://voicemaker.in/ (Salli)
 

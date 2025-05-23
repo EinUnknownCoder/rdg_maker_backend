@@ -97,6 +97,18 @@ def shuffle_playlist(playlist):
                 count += 1
         else:
             no_same_artist_next_to_each_other = True
+    
+    marked_song_is_last_song = False
+    while marked_song_is_last_song == False:
+        position = len(playlist)
+        for x in range(len(playlist)):
+            if "Last" in playlist[x]["Dancer"]:
+                position = x + 1
+        if position is not len(playlist):
+            print(f"There is a song marked as last but it's not last ({position})! Reroll...")
+            random.shuffle(playlist_temp)
+        else:
+            marked_song_is_last_song = True
     return playlist_temp
 
 def create_playlist(songlist, intro, outro, countdownLength, countdownVoice, countdownCrossfade, tenSecondSilenceAtEnd, coverImage, preTime, postTime, fadeInTime, fadeOutTime, countdown, fileName, removeDancer):
@@ -121,8 +133,11 @@ def create_playlist(songlist, intro, outro, countdownLength, countdownVoice, cou
 
             URLS = [song["URL"]]
 
+            # Python Plugin Method
+            """
             ydl_opts = {
                 'format': 'm4a/bestaudio/best',
+                'cookies-from-browser': 'firefox',
                 # ℹ️ See help(yt_dlp.postprocessor) for a list of available Postprocessors and their arguments
                 'postprocessors': [{  # Extract audio using ffmpeg
                     'key': 'FFmpegExtractAudio',
@@ -132,6 +147,10 @@ def create_playlist(songlist, intro, outro, countdownLength, countdownVoice, cou
             }
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 error_code = ydl.download(URLS)
+            """
+                
+            # Command Line Method
+            os.system(f"""yt-dlp.exe -x --audio-format m4a -o "raw/{file_name}" --cookies-from-browser firefox {song["URL"]}""")
             
         
     print("Download missing songs complete!")
